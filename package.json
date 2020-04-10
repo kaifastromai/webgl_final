@@ -1,0 +1,22 @@
+{
+  "name": "webgl_final",
+  "version": "0.0.1",
+  "description": "WebGL Final project",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kaifastromai/webgl_final.git"
+  },
+  "keywords": [
+    "webgl"
+  ],
+  "author": "Kaifas Stromai",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/kaifastromai/webgl_final/issues"
+  },
+  "homepage": "https://github.com/kaifastromai/webgl_final#readme"
+}
