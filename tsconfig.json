@@ -1,0 +1,27 @@
+{
+    "compilerOptions": {
+        "outDir": "./build",
+        "module": "CommonJS",
+        "target": "ESNext",
+        "watch": false,
+        "noImplicitAny": true,
+        "strictNullChecks": false,
+        "sourceMap": true,
+        "declaration": true,
+        "strict": true,
+        "noUnusedLocals": true,
+        "noUnusedParameters": true,
+        "noImplicitReturns": true,
+        "noFallthroughCasesInSwitch": true,
+        "forceConsistentCasingInFileNames": true,
+        "lib": [
+            "ES2018",
+            "DOM"
+        ]
+    },
+    "exclude": [
+        ".git",
+        "node_modules",
+        "build"
+    ]
+}

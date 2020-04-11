@@ -18,5 +18,14 @@
   "bugs": {
     "url": "https://github.com/kaifastromai/webgl_final/issues"
   },
-  "homepage": "https://github.com/kaifastromai/webgl_final#readme"
+  "homepage": "https://github.com/kaifastromai/webgl_final#readme",
+  "dependencies": {
+    "@types/node": "^13.11.1",
+    "express": "^4.17.1"
+  },
+  "devDependencies": {
+    "canon": "^0.4.1",
+    "three": "^0.115.0",
+    "typescript": "^3.8.3"
+  }
 }
