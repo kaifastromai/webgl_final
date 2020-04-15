@@ -21,13 +21,16 @@
   "homepage": "https://github.com/kaifastromai/webgl_final#readme",
   "dependencies": {
     "@types/node": "^13.11.1",
-    "express": "^4.17.1"
+    "express": "^4.17.1",
+    "nodemon": "^2.0.3"
   },
   "devDependencies": {
     "@types/cannon": "^0.1.4",
+    "@types/three": "^0.103.2",
     "cannon": "^0.6.2",
     "canon": "^0.4.1",
     "three": "^0.115.0",
+    "three-gltf-loader": "^1.111.0",
     "typescript": "^3.8.3"
   }
 }
