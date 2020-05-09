@@ -21,7 +21,9 @@
   "homepage": "https://github.com/kaifastromai/webgl_final#readme",
   "dependencies": {
     "@types/node": "^13.11.1",
+    "ammojs": "0.0.2",
     "express": "^4.17.1",
+    "hotkeys-js": "^3.7.6",
     "nodemon": "^2.0.3"
   },
   "devDependencies": {
