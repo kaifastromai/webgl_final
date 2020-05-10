@@ -7,6 +7,14 @@ const GLTFLoader_1 = require("three/examples/jsm/loaders/GLTFLoader");
 const FBXLoader_1 = require("three/examples/jsm/loaders/FBXLoader");
 const hotkeys_js_1 = require("hotkeys-js");
 const phys_object_1 = require("./phys_object");
+const dat = require("dat.gui");
+const gui = new dat.GUI();
+var ship = function () {
+    let message = 'dat.gui';
+    let speed = 0.8;
+    let displayOutline = false;
+    // Define render logic ...
+};
 //Global Delta t
 var dt = 0;
 exports.dt = dt;
@@ -66,17 +74,26 @@ document.addEventListener('mousemove', (e) => {
 document.addEventListener('mouseup', () => drag = false);
 //---------Scene and render setup----------//
 var scene = new THREE.Scene();
-const color = 0x000000; // white
-const near = 10;
-const far = 20;
+const color = 0xFFFFFF; // white
+const near = 30;
+const far = 40;
 scene.fog = new THREE.Fog(color, near, far);
-//scene.background = new THREE.Color(0xFFFFFF)
+scene.background = new THREE.Color(0xFFFFFF);
+const light_color = 0xFFFFFF;
+const intensity = 1;
+const dir_light = new THREE.DirectionalLight(color, intensity);
+dir_light.position.set(0, 0, 0);
+dir_light.target.position.set(0, -1, 0);
+dir_light.castShadow = true;
+scene.add(dir_light);
+scene.add(dir_light.target);
 var camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
 // var glcanvas = <HTMLCanvasElement>document.getElementById('glcanvas');
 // const gl = glcanvas.getContext('webgl2', { alpha: false });
 var renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setClearColor(0x000000, 1);
 renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.shadowMap.enabled = true;
 document.body.append(renderer.domElement);
 //---------------------------------------//
 //Lights
@@ -141,6 +158,7 @@ var debug_items = Array();
 var ship_mdl = new THREE.Group();
 point_mesh.position.set(0, 1.1, 0);
 var raycast = new THREE.Raycaster();
+var object_probe = new THREE.Raycaster();
 var then = 0;
 scene.add(point_mesh);
 scene.add(point_light);
@@ -159,13 +177,15 @@ async function main() {
     road_mdl2.position.x -= 24;
     road_mdl2.name = "road2";
     worldGroup.add(road_mdl, road_mdl2);
+    worldGroup.receiveShadow = true;
+    ship_mdl.castShadow = true;
     scene.add(ship_mdl);
     scene.add(worldGroup);
     FixedUpdate();
     Ship.obj = ship_mdl;
     Ship.phys_body = boxBody;
     Ship.phys_body.angularDamping = 0.5;
-    setInterval(createNewSection, 2000 * xtdt);
+    setInterval(createNewSection, 3000 * xtdt);
 }
 main();
 function ApplyForce(dir, magnitude) {
@@ -174,6 +194,7 @@ function ApplyForce(dir, magnitude) {
 let intresults = new Float32Array(1);
 let oldpos = [0, 0];
 let npos = [1, 1];
+let can_add_lateral = true;
 function FixedUpdate(now = 0) {
     if (then != 0) {
         if (then > 0) {
@@ -190,12 +211,26 @@ function FixedUpdate(now = 0) {
             // console.log(secs);
             var forceLocs = Array();
             forceLocs.push(model.localToWorld(new three_1.Vector3(-0.5, 0, 1)), model.localToWorld(new three_1.Vector3(0.5, 0, 1)), model.localToWorld(new three_1.Vector3(0.5, 0, -1)), model.localToWorld(new three_1.Vector3(-0.5, 0, -1)));
-            //console.log(hits[0].point);
+            console.log(model.position.toArray());
+            var shipDown = new three_1.Vector3(0, -1, 0);
+            var cbquat = new THREE.Quaternion();
+            model.getWorldQuaternion(cbquat);
+            shipDown.applyQuaternion(cbquat);
+            object_probe.set(model.position, shipDown);
+            var hit = object_probe.intersectObject(worldGroup, true);
+            DrawRay(model.position, shipDown.multiplyScalar(4), scene, new THREE.Color("green"));
+            if (hit.length > 0) {
+                let posdelta = model.position.z - hit[0].object.localToWorld(new three_1.Vector3(0, 0, 0)).z;
+                if (Math.abs(posdelta) > 1)
+                    if (Math.sign(posdelta) == 1 && can_add_lateral) {
+                        var nroad = worldGroup.children[worldGroup.children.length - 1].clone();
+                        worldGroup.add(nroad);
+                        nroad.position.z += 24;
+                        worldGroup.add(nroad);
+                        can_add_lateral = !can_add_lateral;
+                    }
+            }
             for (let i = 0; i < 4; i++) {
-                var shipDown = new three_1.Vector3(0, -1, 0);
-                var cbquat = new THREE.Quaternion();
-                model.getWorldQuaternion(cbquat);
-                shipDown.applyQuaternion(cbquat);
                 raycast.set(forceLocs[i], shipDown);
                 //DrawRay(forceLocs[i], cubeDown, scene);
                 var hits = raycast.intersectObject(worldGroup, true);
@@ -219,13 +254,14 @@ function FixedUpdate(now = 0) {
 var createNewSection = coroutine(function* () {
     while (true) {
         yield;
-        console.log('Created new section');
+        //console.log('Created new section');
         var nroad = worldGroup.children[worldGroup.children.length - 1].clone();
-        //var npos = nroad.worldToLocal(nroad.position.add(new Vector3(0, 0, 2)));
-        nroad.position.x -= 24;
         worldGroup.add(nroad);
+        nroad.position.x -= 24;
+        nroad = worldGroup.children[worldGroup.children.length - 1].clone();
+        worldGroup.add(nroad);
+        nroad.position.x -= 24;
         if (worldGroup.children.length > 5) {
-            console.log("Hello: " + worldGroup.children.length);
             worldGroup.remove(worldGroup.children[0]);
         }
     }
