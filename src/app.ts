@@ -203,7 +203,7 @@ async function main() {
     Ship.obj = ship_mdl;
     Ship.phys_body = boxBody;
     Ship.phys_body.angularDamping = 0.5;
-    setInterval(createNewSection, 3000 * xtdt);
+    setInterval(createNewSection, 4000 * xtdt);
 
 }
 main();
