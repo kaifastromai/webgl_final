@@ -1,5 +1,5 @@
-import { Object3D } from "three";
 import { Body } from "cannon";
+import { Object3D } from "three";
 class PhyObj {
 
     /**@param  */
@@ -12,7 +12,7 @@ class PhyObj {
         }
         else {
             this.obj = new Object3D();
-        }
+        }o
         if (body != undefined) {
             this.phys_body = body;
         }
@@ -38,4 +38,4 @@ class PhyObj {
 
 }
 
-export { PhyObj }
+export { PhyObj };
