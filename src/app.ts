@@ -1,12 +1,13 @@
-import * as THREE from "three"
+import * as THREE from "three";
 import { Vector3, Points, LinearInterpolant, Color } from "three";
-import * as CNN from "cannon"
-import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader'
+import * as CNN from "cannon";
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
 import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader';
-import hk from 'hotkeys-js'
+import hk from 'hotkeys-js';
 import { PhyObj } from "./phys_object";
 import hotkeys from "hotkeys-js";
-import * as dat from 'dat.gui'
+import * as dat from 'dat.gui';
+import { LerpCo, simple_func, ArrayLerp, randomObjects } from "./utils";
 const gui = new dat.GUI();
 
 var ship = function () {
@@ -21,24 +22,24 @@ hk('*', (event, handler) => {
 
     if (event.keyCode == 39) {
         console.log(event.key);
-        ApplyForce(new CNN.Vec3(-1, 0, 0), 80);
+        ApplyForce(new CNN.Vec3(-1, 0, 0), 4);
         event.preventDefault();
 
     } else if (event.keyCode == 37) {
 
         event.preventDefault();
         console.log(event.key);
-        ApplyForce(new CNN.Vec3(1, 0, 0), 80);
+        ApplyForce(new CNN.Vec3(1, 0, 0), 4);
     }
     else if (event.keyCode == 38) {
         event.preventDefault();
-        ApplyForce(new CNN.Vec3(0, 0, 1), 80);
+        ApplyForce(new CNN.Vec3(0, 0, 1), 4);
     }
     else if (event.keyCode == 40) {
         event.preventDefault();
-        ApplyForce(new CNN.Vec3(0, 0, -1), 80);
+        ApplyForce(new CNN.Vec3(0, 0, -1), 4);
     }
-})
+});
 //CANNON world setup
 var fixedTimeStep = 1.0 / 60.0;
 var maxSubSteps = 3;
@@ -47,7 +48,7 @@ var world = new CNN.World();
 world.gravity.set(0, 0, 0);
 world.broadphase = new CNN.NaiveBroadphase();
 world.solver.iterations = 10;
-var colliderSize = [0.8, 2, 3]
+var colliderSize = [0.8, 2, 3];
 var boxBody = new CNN.Body({
     mass: 5,
     position: new CNN.Vec3(0, 1, 0),
@@ -60,7 +61,7 @@ world.addBody(boxBody);
 var groundBody = new CNN.Body({
     mass: 0 //zero mass means mesh is static
 
-})
+});
 var groundShape = new CNN.Plane();
 groundBody.quaternion.setFromEuler(-Math.PI / 2, 0, 0);
 groundBody.position.set(0, -1, 0);
@@ -75,7 +76,7 @@ document.addEventListener('mousedown', (e) => { drag = true; drag_src = new THRE
 document.addEventListener('mousemove', (e) => {
     if (drag) {
         drag_vec = new THREE.Vector2(10 * (e.offsetX - drag_src.x) / window.innerWidth, 10 * (-e.offsetY + drag_src.y) / window.innerHeight);
-        console.log("Offset X: " + 10 * (e.offsetX - drag_src.x) / window.innerWidth + " ,Offset Y: " + 10 * (-e.offsetY + drag_src.y) / window.innerHeight)
+        console.log("Offset X: " + 10 * (e.offsetX - drag_src.x) / window.innerWidth + " ,Offset Y: " + 10 * (-e.offsetY + drag_src.y) / window.innerHeight);
     }
 });
 document.addEventListener('mouseup', () => drag = false);
@@ -87,7 +88,7 @@ const color = 0xFFFFFF;  // white
 const near = 30;
 const far = 40;
 scene.fog = new THREE.Fog(color, near, far);
-scene.background = new THREE.Color(0xFFFFFF)
+scene.background = new THREE.Color(0xFFFFFF);
 const light_color = 0xFFFFFF;
 const intensity = 1;
 const dir_light = new THREE.DirectionalLight(color, intensity);
@@ -118,7 +119,7 @@ async function load_glb_model(url: string): Promise<THREE.Group> {
     return new Promise((resolve, reject) => {
         loader.load(url, (gltf) => {
             let mdl = gltf.scene;
-            mdl.scale.set(0.5, 0.5, 0.5)
+            mdl.scale.set(0.5, 0.5, 0.5);
             resolve(mdl);
 
         }, (xhr) => {
@@ -126,9 +127,9 @@ async function load_glb_model(url: string): Promise<THREE.Group> {
             console.log(`${(xhr.loaded / xhr.total * 100)}% loaded`);
         },
             (error) => {
-                reject(new Error("Could not load: " + error.message))
+                reject(new Error("Could not load: " + error.message));
             });
-    })
+    });
 }
 const fbx_loader = new FBXLoader();
 const road_url = '/models/road.fbx';
@@ -149,12 +150,14 @@ async function FBXLoad(): Promise<THREE.Group> {
     });
 }
 var Ship: PhyObj = new PhyObj(undefined, undefined);
-var geo = new THREE.BoxGeometry(colliderSize[0], colliderSize[1], colliderSize[2])
+var geo = new THREE.BoxGeometry(colliderSize[0], colliderSize[1], colliderSize[2]);
 var mat = new THREE.MeshLambertMaterial({ color: 0x00ff00 });
-mat.wireframe = true;
+var temp_mat = new THREE.MeshStandardMaterial({ color: 0xFFFFFF });
+
+//mat.wireframe = true;
 var model = new THREE.Mesh(geo, mat);
 var plane_geo = new THREE.PlaneBufferGeometry(10, 10);
-var plane_mat = new THREE.MeshLambertMaterial({ color: 0xffffff });
+var plane_mat = new THREE.MeshPhongMaterial({ color: 0xffffff });
 var plane_mesh = new THREE.Mesh(plane_geo, plane_mat);
 var point_geo = new THREE.Geometry().setFromPoints([new THREE.Vector3(0, 0, 0)]);
 var point_mat = new THREE.PointsMaterial({ color: 0xFF0000, size: 0.1 });
@@ -173,6 +176,7 @@ var debug_items = Array<THREE.Object3D>();
 //DrawLine(new Vector3(0, 0.5, 0), new Vector3(0.5, 1, 0.5), scene);
 //DrawLine(new Vector3(0, 0, 0), new Vector3(0.1, 0.5, 1), scene);
 var ship_mdl = new THREE.Group();
+var obscales = new THREE.Group();
 point_mesh.position.set(0, 1.1, 0);
 
 var raycast = new THREE.Raycaster();
@@ -186,9 +190,9 @@ scene.add(model);
 var worldGroup: THREE.Group = new THREE.Group();
 var road_mdl: THREE.Group = new THREE.Group();
 async function main() {
-    ship_mdl = await load_glb_model(url)
-    road_mdl = await load_glb_model("/models/roadglb2.glb")
-    road_mdl.quaternion.setFromAxisAngle(new Vector3(0, 1, 0), Math.PI / 2)
+    ship_mdl = await load_glb_model(url);
+    road_mdl = await load_glb_model("/models/roadglb2.glb");
+    road_mdl.quaternion.setFromAxisAngle(new Vector3(0, 1, 0), Math.PI / 2);
     road_mdl.position.set(0, 0, 0);
     road_mdl.scale.set(2, 2, 2);
     var road_mdl2 = road_mdl.clone();
@@ -199,16 +203,19 @@ async function main() {
     ship_mdl.castShadow = true;
     scene.add(ship_mdl);
     scene.add(worldGroup);
+    scene.add(obscales);
     FixedUpdate();
     Ship.obj = ship_mdl;
     Ship.phys_body = boxBody;
     Ship.phys_body.angularDamping = 0.5;
     setInterval(createNewSection, 3000 * xtdt);
+    setInterval(createNewObstacle, xtdt)
+
 
 }
 main();
 function ApplyForce(dir: CNN.Vec3, magnitude: number) {
-    boxBody.applyLocalForce(dir.mult(magnitude), new CNN.Vec3(0, 0, 0));
+    boxBody.velocity.set(dir.z * magnitude, dir.y * magnitude, -dir.x * magnitude)
 }
 let intresults = new Float32Array(1);
 let oldpos = [0, 0];
@@ -233,35 +240,37 @@ function FixedUpdate(now = 0) {
                 boxBody.position.z);
             Ship.update();
             camera.lookAt(model.position);
-            camera.position.z = Ship.obj.position.z;
-
+            //camera.position.z = Ship.obj.position.z;
             // console.log(secs);
+
+
+
             var forceLocs = Array<Vector3>();
             forceLocs.push(
                 model.localToWorld(new Vector3(-0.5, 0, 1)),
                 model.localToWorld(new Vector3(0.5, 0, 1)),
                 model.localToWorld(new Vector3(0.5, 0, -1)),
                 model.localToWorld(new Vector3(-0.5, 0, -1)));
-            console.log(model.position.toArray());
+            //console.log(model.position.toArray());
             var shipDown = new Vector3(0, -1, 0);
             var cbquat = new THREE.Quaternion();
             model.getWorldQuaternion(cbquat);
             shipDown.applyQuaternion(cbquat);
             object_probe.set(model.position, shipDown);
-            var hit = object_probe.intersectObject(worldGroup, true);
-            DrawRay(model.position, shipDown.multiplyScalar(4), scene, new THREE.Color("green"))
+            // var hit = object_probe.intersectObject(worldGroup, true);
+            DrawRay(model.position, shipDown.multiplyScalar(4), scene, new THREE.Color("green"));
 
-            if (hit.length > 0) {
-                let posdelta = model.position.z - hit[0].object.localToWorld(new Vector3(0, 0, 0)).z;
-                if (Math.abs(posdelta) > 1)
-                    if (Math.sign(posdelta) == 1 && can_add_lateral) {
-                        var nroad = worldGroup.children[worldGroup.children.length - 1].clone();
-                        worldGroup.add(nroad);
-                        nroad.position.z += 24;
-                        worldGroup.add(nroad);
-                        can_add_lateral = !can_add_lateral;
-                    }
-            }
+            // if (hit.length > 0) {
+            //     let posdelta = model.position.z - hit[0].object.localToWorld(new Vector3(0, 0, 0)).z;
+            //     if (Math.abs(posdelta) > 1)
+            //         if (Math.sign(posdelta) == 1 && can_add_lateral) {
+            //             var nroad = worldGroup.children[worldGroup.children.length - 1].clone();
+            //             worldGroup.add(nroad);
+            //             nroad.position.z += 24;
+            //             worldGroup.add(nroad);
+            //             can_add_lateral = !can_add_lateral;
+            //         }
+            // }
             for (let i = 0; i < 4; i++) {
                 raycast.set(forceLocs[i], shipDown);
                 //DrawRay(forceLocs[i], cubeDown, scene);
@@ -275,7 +284,8 @@ function FixedUpdate(now = 0) {
 
                 }
                 DrawRay(model.position, shipDown.multiplyScalar(0.4), scene, new Color("green"));
-                worldGroup.position.add(new Vector3(0.05, 0, 0))
+                worldGroup.position.add(new Vector3(0.05, 0, 0));
+                obscales.position.add(new Vector3(0.05, 0, 0));
                 //console.log("Speed per second:" + 0.05 / dt);
 
             }
@@ -287,9 +297,10 @@ function FixedUpdate(now = 0) {
     then = now;
 }
 var createNewSection = coroutine(function* () {
+
     while (true) {
         yield;
-        //console.log('Created new section');
+        console.log(obscales.children.length);
         var nroad = worldGroup.children[worldGroup.children.length - 1].clone();
         worldGroup.add(nroad);
         nroad.position.x -= 24;
@@ -301,31 +312,36 @@ var createNewSection = coroutine(function* () {
             worldGroup.remove(worldGroup.children[0]);
 
         }
+        obscales.children.forEach(el => {
+            if (el.localToWorld(el.position).x > 20) {
+                el.children[0].material = temp_mat;
+                obscales.remove(el);
+                console.log("removed element");
+            }
+        });
 
     }
 });
-// var LerpCo = coroutine(function* () {
-//     var t = 0;
-//     while (true) {
-//         for (t = 0; t < 30; t++) {
-//             yield;
-//             console.log("Lerp is: " + Lerp(0, 10, t / 29));
+var createNewObstacle = coroutine(function* () {
+    while (true) {
+        yield;
+        obscales.add(randomObjects({ min: -80, max: -20 }, { min: -10, max: 10 }, { min: -10, max: 10 }, 1, [model], new Vector3(-obscales.position.x, 0, 0)));
+    }
 
-//         }
 
-//         yield;
-//         t = 0;
-
-//     }
-// })
+})
 function coroutine(f: any) {
-    var o = f(); // instantiate the coroutine
+    var o = f(...arguments); // instantiate the coroutine
     o.next(); // execute until the first yield
     return function (x: any) {
         o.next(x);
-    }
+    };
 }
-
+var test = coroutine(function* (v: number) {
+    let k = 0;
+    k += v;
+    yield 0;
+});
 
 function DrawRay(origin: Vector3, direction: Vector3, scene: THREE.Scene, color = new THREE.Color()): void {
     var nmat = new THREE.LineBasicMaterial({ color: color });
@@ -337,7 +353,7 @@ function DrawRay(origin: Vector3, direction: Vector3, scene: THREE.Scene, color 
     var line = new THREE.Line(ngeo, nmat);
     line.name = "debug_line";
     scene.add(line);
-    debug_items.push(line)
+    debug_items.push(line);
 }
 function DrawLine(origin: Vector3, end: Vector3, scene: THREE.Scene, color = new THREE.Color()): void {
     var nmat = new THREE.LineBasicMaterial({ color: color });
@@ -362,7 +378,7 @@ function ApplyHoverForce(ground: Vector3, forceLoc: Vector3) {
     //  ground.set(ground.x + cube.localToWorld(new Vector3(0, 1, 0)).normalize().x * hover_height,
     //     ground.y + cube.localToWorld(new Vector3(0, 1, 0)).normalize().y * hover_height,
     //      ground.z + cube.localToWorld(new Vector3(0, 1, 0)).normalize().z * hover_height);
-    let lcl_q = model.quaternion
+    let lcl_q = model.quaternion;
     let up: Vector3 = new Vector3(0, 1, 0);
     up.applyQuaternion(lcl_q);
     up.normalize();
@@ -371,6 +387,7 @@ function ApplyHoverForce(ground: Vector3, forceLoc: Vector3) {
     var r = new Vector3(ground.x - forceLoc.x, ground.y - forceLoc.y, ground.z - forceLoc.z);
     boxBody.applyForce(new CNN.Vec3(r.x * attraction_coef, r.y * attraction_coef, r.z * attraction_coef), new CNN.Vec3(forceLoc.x, forceLoc.y, forceLoc.z));
     boxBody.linearDamping = 0.6;
+
 }
 
 function ManageRoad() {
@@ -379,5 +396,5 @@ function ManageRoad() {
     worldGroup.remove(worldGroup.children[worldGroup.children.length - 1]);
 
 }
-export { dt }
+export { dt };
 //animate();

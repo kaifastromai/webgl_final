@@ -1,6 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const app_1 = require("./app");
+const THREE = require("three");
 function resize_canvas(canvas) {
     var cssToRealPixels = 1;
     var displayWidth = Math.floor(canvas.clientWidth * cssToRealPixels);
@@ -12,13 +13,37 @@ function resize_canvas(canvas) {
     }
 }
 exports.resize_canvas = resize_canvas;
-function randomPos(range) {
+function randomPos(max, min) {
     let pos = [3];
-    pos[0] = Math.random() % range;
-    pos[1] = Math.random() % range;
-    pos[2] = Math.random() % range;
+    let range = max - min;
+    pos[0] = Math.random() * (range + 1) + min;
+    pos[1] = Math.random() * (range + 1) + min;
+    pos[2] = Math.random() * (range + 1) + min;
     return pos;
 }
+function controlledRandomPos(x_range, y_range, z_range) {
+    let pos = [3];
+    let lx_range = x_range.max - x_range.min;
+    let yx_range = y_range.max - y_range.min;
+    let zx_range = z_range.max - z_range.min;
+    pos[0] = Math.random() * (lx_range + 1) + x_range.min;
+    pos[1] = Math.random() * (yx_range + 1) + y_range.min;
+    pos[2] = Math.random() * (zx_range + 1) + z_range.min;
+    return pos;
+}
+function randomObjects(x_range, y_range, z_range, count, shapes, displacement) {
+    var group = new THREE.Group;
+    for (let i = 0; i < count; i++) {
+        let selector = Math.floor(Math.random() % shapes.length);
+        let object = shapes[selector].clone();
+        object.position.fromArray(controlledRandomPos(x_range, y_range, z_range));
+        object.position.add(displacement);
+        object.scale.fromArray(controlledRandomPos({ min: 0.1, max: 0.2 }, { min: 0.1, max: 0.2 }, { min: 0.1, max: 0.2 }));
+        group.add(object);
+    }
+    return group;
+}
+exports.randomObjects = randomObjects;
 //Linear interpolation
 function ArrayLerp(old, newvals, t) {
     let rarray = [old.length];
@@ -62,7 +87,7 @@ var LerpCo = array_corout(function* () {
             // console.log(Lerp(0, 10, t / 29));
         }
         yield [0, 0, 0];
-        t = 0;
+        k = 0;
     }
 });
 exports.LerpCo = LerpCo;
@@ -76,7 +101,7 @@ function cofoo(ar) {
     console.log(it.next().value);
 }
 exports.cofoo = cofoo;
-function coroutine(fn) {
+function lerp_coroutine(fn) {
     return function () {
         let gen = fn(...arguments);
         next();
@@ -88,8 +113,8 @@ function coroutine(fn) {
         }
     };
 }
-var simple_func = coroutine(function* (n) {
-    yield n;
+var simple_func = lerp_coroutine(function* (first, last) {
+    yield first[0]++;
 });
 exports.simple_func = simple_func;
 //# sourceMappingURL=utils.js.map

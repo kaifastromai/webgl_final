@@ -1,4 +1,8 @@
 import { dt } from "./app";
+import { Vector3 } from "three";
+import THREE = require("three");
+import { debug } from "console";
+
 
 function resize_canvas(canvas: HTMLCanvasElement) {
     var cssToRealPixels = 1;
@@ -12,12 +16,39 @@ function resize_canvas(canvas: HTMLCanvasElement) {
 
     }
 }
-function randomPos(range: number): Array<number> {
+function randomPos(max: number, min: number): Array<number> {
     let pos = [3];
-    pos[0] = Math.random() % range;
-    pos[1] = Math.random() % range;
-    pos[2] = Math.random() % range;
+    let range = max - min;
+    pos[0] = Math.random() * (range + 1) + min;
+    pos[1] = Math.random() * (range + 1) + min;
+    pos[2] = Math.random() * (range + 1) + min;
     return pos;
+}
+function controlledRandomPos(x_range: Range, y_range: Range, z_range: Range): Array<number> {
+    let pos = [3];
+    let lx_range = x_range.max - x_range.min;
+    let yx_range = y_range.max - y_range.min;
+    let zx_range = z_range.max - z_range.min;
+    pos[0] = Math.random() * (lx_range + 1) + x_range.min;
+    pos[1] = Math.random() * (yx_range + 1) + y_range.min;
+    pos[2] = Math.random() * (zx_range + 1) + z_range.min;
+    return pos;
+}
+interface Range {
+    min: number;
+    max: number;
+}
+function randomObjects(x_range: Range, y_range: Range, z_range: Range, count: number, shapes: THREE.Object3D[], displacement: Vector3): THREE.Group {
+    var group = new THREE.Group;
+    for (let i = 0; i < count; i++) {
+        let selector = Math.floor(Math.random() % shapes.length);
+        let object = shapes[selector].clone();
+        object.position.fromArray(controlledRandomPos(x_range, y_range, z_range));
+        object.position.add(displacement);
+        object.scale.fromArray(controlledRandomPos({ min: 0.1, max: 0.2 }, { min: 0.1, max: 0.2 }, { min: 0.1, max: 0.2 }))
+        group.add(object);
+    }
+    return group;
 }
 //Linear interpolation
 function ArrayLerp(old: Array<number>, newvals: Array<number>, t: number): Array<number> {
@@ -55,10 +86,10 @@ function array_corout(f: any) {
     var o = f(); // instantiate the coroutine
     o.next(); // execute until the first yield
     return function (old_ar: Array<number>, new_ar: Array<number>, t: number) {
-        return o.next(old_ar, new_ar, t).value
+        return o.next(old_ar, new_ar, t).value;
 
 
-    }
+    };
 }
 var LerpCo = array_corout(function* () {
     var k = 0;
@@ -70,10 +101,10 @@ var LerpCo = array_corout(function* () {
         }
 
         yield [0, 0, 0];
-        t = 0;
+        k = 0;
 
     }
-})
+});
 
 function* foo(al: number) {
     while (al < 3) {
@@ -84,23 +115,24 @@ const it = foo(0);
 function cofoo(ar: number) {
     console.log(it.next().value);
 }
-function coroutine(fn: Generator<any, any, any>) {
+function lerp_coroutine(fn: Generator<any, any, any>) {
     return function () {
         let gen = fn(...arguments);
         next();
         function next(result: any) {
             let yielded = gen.next(result);
-            
+
             if (!yielded.done) {
-                next(yielded.value)
+                next(yielded.value);
             }
-            
+
         }
-    }
+    };
 }
-var simple_func = coroutine(function* (n: number) {
-    yield n
+var simple_func = lerp_coroutine(function* (first: Array<number>, last: Array<number>) {
+    yield first[0]++;
+
 });
 
 
-export { resize_canvas, Lerp, SimpleCerp, ArrayCerp, ArrayLerp, LerpCo, cofoo, simple_func };
+export { resize_canvas, Lerp, SimpleCerp, ArrayCerp, ArrayLerp, LerpCo, cofoo, simple_func, randomObjects };
